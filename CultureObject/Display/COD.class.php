@@ -37,23 +37,17 @@ class COD  {
         $object_id = get_the_ID();
         
         $html = preg_replace_callback(
-            '/{{cos.field_value.([\w\-_\ ]+)}}/',
+            '/{{cos.field_name.([\w\-_\ ]+)}}/',
             function ($matches) {
-                $field = cos_get_field($matches[1]);
-                if($field){
-                    $heading = ucfirst(str_replace("_", " ", $matches[1]));
-                    return '<h3><strong>'.$heading.'</strong></h3><p>'.$field.'</p>';
-                }
+                return cos_get_remapped_field_name($matches[1]);
             },
             $html
         );
         
-        // FUNCTION TO MATCH 'ALL_FIELDS' OPTION
         $html = preg_replace_callback(
-            '/{{cos.all_fields}}/',
-            function () {
-                // FUNCTION TO RETURN ALL FIELDS AS HTML TABLE
-                return mds_cos_fields();
+            '/{{cos.field_value.([\w\-_\ ]+)}}/',
+            function ($matches) {
+                return cos_get_field($matches[1]);
             },
             $html
         );
@@ -65,33 +59,33 @@ class COD  {
         
         $all_meta = get_post_meta(get_the_ID());
         
-        // if (isset($_GET['displayallmeta'])) {
-        //     // Add the styles for the <pre> element
-        //     $html .= '<style>               
-        //         .allmeta { padding:20px; background-color:#f9f9f9;border:1px dotted #000000}
-        //         pre {
-        //             background-color: #f4f4f4; 
-        //             border: 1px solid #ddd;   
-        //             padding: 10px;             
-        //             font-family: "Courier New", Courier, monospace;
-        //             font-size: 14px;           
-        //             color: #333;               
-        //             overflow-x: auto;          
-        //             white-space: pre-wrap;     
-        //             word-wrap: break-word;     
-        //             border-radius: 5px;
-        //         }
-        //         
-        //     </style>';
-        // 
-        //     // Add heading and metadata dump to the HTML
-        //     $html .= '<div class="allmeta">';
-        //     $html .= '<h3>All object metadata</h3>';
-        //     $html .= '<pre>';
-        //     $html .= print_r($all_meta, true);  
-        //     $html .= '</pre>';
-        //     $html .= '</div>';
-        // }
+        if (isset($_GET['displayallmeta'])) {
+            // Add the styles for the <pre> element
+            $html .= '<style>               
+                .allmeta { padding:20px; background-color:#f9f9f9;border:1px dotted #000000}
+                pre {
+                    background-color: #f4f4f4; 
+                    border: 1px solid #ddd;   
+                    padding: 10px;             
+                    font-family: "Courier New", Courier, monospace;
+                    font-size: 14px;           
+                    color: #333;               
+                    overflow-x: auto;          
+                    white-space: pre-wrap;     
+                    word-wrap: break-word;     
+                    border-radius: 5px;
+                }
+                
+            </style>';
+        
+            // Add heading and metadata dump to the HTML
+            $html .= '<div class="allmeta">';
+            $html .= '<h3>All object metadata</h3>';
+            $html .= '<pre>';
+            $html .= print_r($all_meta, true);  
+            $html .= '</pre>';
+            $html .= '</div>';
+        }
         
         return $html;
         
