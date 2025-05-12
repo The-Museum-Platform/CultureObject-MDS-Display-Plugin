@@ -138,8 +138,14 @@ function mds_cos_fields() {
     document.addEventListener('DOMContentLoaded', () => {
         const button = document.querySelector('#ct_complete_record');
         const elementToToggle = document.getElementById('ct_complete_record_table');
+        const link = button.querySelector('a');
         button.addEventListener('mousedown', () => {
             elementToToggle.classList.toggle('show');
+            if (elementToToggle.classList.contains('show')) {
+                link.textContent = 'Hide complete record';
+            } else {
+                link.textContent = 'View complete record';
+            }
         });
     });
     </script>";
