@@ -30,6 +30,13 @@ function mds_make_links_clickable( $text ) {
 	);
 }
 
+function mds_enqueue_assets() {
+	// Enqueue minimal handles for our inline content
+	// Using false as src creates empty handles specifically for inline content
+	wp_enqueue_style( 'mds-record-display', false, array(), '1.0.0' );
+	wp_enqueue_script( 'mds-record-display', false, array(), '1.0.0', true );
+}
+
 function mds_cos_fields() {
 	$id = get_the_ID();
 	if ( ! $id ) {
@@ -39,7 +46,56 @@ function mds_cos_fields() {
 	$obj       = cos_get_field( '@document' );
 	$obj_admin = cos_get_field( '@admin' );
 
+	// Validate that we have the required data structure
+	if ( ! $obj || ! is_array( $obj ) || ! isset( $obj['units'] ) || ! is_array( $obj['units'] ) ) {
+		return false;
+	}
+
 	$fields = array();
+
+	// Ensure assets are enqueued before adding inline styles/scripts
+	mds_enqueue_assets();
+
+	// Enqueue inline styles for the complete record table
+	wp_add_inline_style(
+		'mds-record-display',
+		'
+		#ct_complete_record_table {
+			display: none;
+			border-collapse: collapse;
+		}
+		#ct_complete_record_table.show {
+			display: block;
+		}
+		#ct_complete_record_table tr {
+			padding-bottom: 4px;
+		}
+		#ct_complete_record_table tr.hidden {
+			display: none;
+		}
+		#ct_complete_record_table tr th {
+			text-align: left;
+			font-size: 14px;
+			min-width: 100px;
+			background: #eee;
+		}
+		#ct_complete_record_table tr td {
+			vertical-align: top;
+			font-size: 12px;
+			border-bottom: 1px solid #ccc;
+		}
+		#ct_complete_record_table tr td.no-border {
+			border-bottom: none;
+		}
+		#ct_complete_record_table tr td .indent {
+			padding-left: 20px;
+			font-style: italic;
+		}
+		#ct_complete_record_table table tr:has(td:last-child:empty) {
+			display: none;
+		}
+	'
+	);
 
 	foreach ( $obj['units'] as $field ) {
 		if ( isset( $field['type'] ) && isset( $field['value'] ) ) {
@@ -69,19 +125,18 @@ function mds_cos_fields() {
 		}
 	}
 
-	$html  = '<style>#ct_complete_record_table{display:none;border-collapse: collapse;}#ct_complete_record_table.show{display:block;}#ct_complete_record_table tr{padding-bottom:4px;}#ct_complete_record_table tr.hidden{display:none;}#ct_complete_record_table tr th{text-align:left;font-size:14px;min-width:100px;background:#eee;}#ct_complete_record_table tr td{vertical-align:top;font-size:12px;border-bottom:1px solid #ccc;}#ct_complete_record_table tr td.no-border{border-bottom:none;}#ct_complete_record_table tr td .indent{padding-left:20px;font-style:italic;}#ct_complete_record_table table tr:has(td:last-child:empty) { display: none; }</style>';
-	$html .= '<h3 id="ct_complete_record"><a href="#">View complete record</a></h3>';
+	$html  = '<h3 id="ct_complete_record"><a href="#">' . esc_html__( 'View complete record', 'culture-object-display' ) . '</a></h3>';
 	$html .= '<div id="ct_complete_record_table"><table>\n\n';
 
 	$csv_file = plugin_dir_path( __FILE__ ) . 'spectrum-display.csv';
 	if ( ! file_exists( $csv_file ) ) {
-		return $html . '<tr><td>Configuration file not found.</td></tr></table></div>';
+		return $html . '<tr><td>' . esc_html__( 'Configuration file not found.', 'culture-object-display' ) . '</td></tr></table></div>';
 	}
 
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 	$f = fopen( $csv_file, 'r' );
 	if ( ! $f ) {
-		return $html . '<tr><td>Unable to read configuration file.</td></tr></table></div>';
+		return $html . '<tr><td>' . esc_html__( 'Unable to read configuration file.', 'culture-object-display' ) . '</td></tr></table></div>';
 	}
 
 	$i               = 0;
@@ -150,21 +205,34 @@ function mds_cos_fields() {
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 	fclose( $f );
 
-	$html .= '</table><p><a href="' . esc_url( 'https://museumdata.uk/object-search/object/?pid=' . rawurlencode( $obj_admin['uid'] ) ) . "\">View this record along with millions of others from UK museums at the Museum Data Service.</a></p></div><script type='text/javascript'>
-    document.addEventListener('DOMContentLoaded', () => {
-        const button = document.querySelector('#ct_complete_record');
-        const elementToToggle = document.getElementById('ct_complete_record_table');
-        const link = button.querySelector('a');
-        button.addEventListener('mousedown', () => {
-            elementToToggle.classList.toggle('show');
-            if (elementToToggle.classList.contains('show')) {
-                link.textContent = 'Hide complete record';
-            } else {
-                link.textContent = 'View complete record';
-            }
-        });
-    });
-    </script>";
+	// Enqueue inline script for the complete record toggle functionality
+	wp_add_inline_script(
+		'mds-record-display',
+		'
+		document.addEventListener("DOMContentLoaded", function() {
+			const button = document.querySelector("#ct_complete_record");
+			const elementToToggle = document.getElementById("ct_complete_record_table");
+			const link = button.querySelector("a");
+			button.addEventListener("click", function(e) {
+				e.preventDefault();
+				elementToToggle.classList.toggle("show");
+				if (elementToToggle.classList.contains("show")) {
+					link.textContent = "' . esc_js( __( 'Hide complete record', 'culture-object-display' ) ) . '";
+				} else {
+					link.textContent = "' . esc_js( __( 'View complete record', 'culture-object-display' ) ) . '";
+				}
+			});
+		});
+	'
+	);
+
+	// Add museum data service link if UID is available
+	$museum_link = '';
+	if ( $obj_admin && is_array( $obj_admin ) && isset( $obj_admin['uid'] ) && ! empty( $obj_admin['uid'] ) ) {
+		$museum_link = '<p><a href="' . esc_url( 'https://museumdata.uk/object-search/object/?pid=' . rawurlencode( $obj_admin['uid'] ) ) . '">' . esc_html__( 'View this record along with millions of others from UK museums at the Museum Data Service.', 'culture-object-display' ) . '</a></p>';
+	}
+
+	$html .= '</table>' . $museum_link . '</div>';
 
 	return $html;
 }
