@@ -67,10 +67,11 @@ function mds_cos_fields() {
 
 	$f = fopen( plugin_dir_path( __FILE__ ) . 'spectrum-display.csv', 'r' );
 
-	$i              = 0;
-	$displaySection = false;
+	$i               = 0;
+	$display_section = false;
 
-	while ( ( $line = fgetcsv( $f ) ) !== false ) {
+	$line = fgetcsv( $f );
+	while ( false !== $line ) {
 		if ( $i == 0 ) {
 			$html .= '<tr>';
 			foreach ( $line as $cell ) {
@@ -80,22 +81,22 @@ function mds_cos_fields() {
 			}
 			$html .= "</tr>\n";
 		} else {
-			$c      = 0;
-			$row    = '';
-			$newRow = false;
+			$c       = 0;
+			$row     = '';
+			$new_row = false;
 
 			foreach ( $line as $cell ) {
 				if ( $c == 0 && $cell !== '' ) {
-					if ( $displaySection ) {
-						$html          .= $section;
-						$displaySection = false;
+					if ( $display_section ) {
+						$html           .= $section;
+						$display_section = false;
 					}
 
 					$section = "<tr><td colspan='3'><strong>" . htmlspecialchars( $cell ) . '</strong></td></tr>';
-					$newRow  = true;
-				} elseif ( $newRow ) {
+					$new_row = true;
+				} elseif ( $new_row ) {
 						$section .= "<tr><td class='no-border'></td><td>" . htmlspecialchars( $cell );
-						$newRow   = false;
+						$new_row  = false;
 				} elseif ( $c == 3 ) {
 						$field_key = $cell;
 						$section  .= '<td>';
@@ -107,7 +108,7 @@ function mds_cos_fields() {
 						} else {
 							$section .= make_links_clickable( $fields[ $field_key ] );
 						}
-						$displaySection = true;
+						$display_section = true;
 					}
 						$section .= '</td></tr>';
 				} else {
@@ -126,6 +127,7 @@ function mds_cos_fields() {
 			}
 		}
 		++$i;
+		$line = fgetcsv( $f );
 	}
 
 	fclose( $f );
