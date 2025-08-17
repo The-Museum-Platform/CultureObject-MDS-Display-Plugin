@@ -12,8 +12,8 @@
  * License: Apache 2 License
  */
 
-require_once('CultureObject/Display/COD.class.php');
-register_activation_hook(__FILE__, array('CultureObject\Display\COD', 'check_versions'));
-register_activation_hook(__FILE__, array('CultureObject\Display\COD', 'regenerate_permalinks'));
-register_deactivation_hook(__FILE__, array('CultureObject\Display\COD', 'regenerate_permalinks'));
+require_once 'CultureObject/Display/COD.class.php';
+register_activation_hook( __FILE__, array( 'CultureObject\Display\COD', 'check_versions' ) );
+register_activation_hook( __FILE__, array( 'CultureObject\Display\COD', 'regenerate_permalinks' ) );
+register_deactivation_hook( __FILE__, array( 'CultureObject\Display\COD', 'regenerate_permalinks' ) );
 $cod = new \CultureObject\Display\COD();
