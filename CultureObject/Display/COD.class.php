@@ -4,7 +4,21 @@ namespace CultureObject\Display;
 
 class COD {
 
-	function __construct() {
+	/**
+	 * Plugin directory path
+	 *
+	 * @var string
+	 */
+	private $plugin_directory;
+
+	/**
+	 * Plugin URL
+	 *
+	 * @var string
+	 */
+	private $plugin_url;
+
+	public function __construct() {
 		$this->plugin_directory = realpath( __DIR__ . '/../../' );
 		$this->plugin_url       = plugins_url( '/', __DIR__ );
 
@@ -14,12 +28,12 @@ class COD {
 		add_filter( 'the_content', array( $this, 'provide_content' ), 1 );
 	}
 
-	function add_global_supports() {
+	public function add_global_supports() {
 		add_post_type_support( 'object', array( 'editor' ) );
 		add_theme_support( 'cos-remaps' );
 	}
 
-	function provide_content( $prev ) {
+	public function provide_content( $prev ) {
 		if ( ! in_the_loop() || ! is_main_query() || get_post_type() != 'object' ) {
 			return $prev;
 		}
@@ -35,9 +49,7 @@ class COD {
 		return $prev;
 	}
 
-	function text_substitute( $html ) {
-		$object_id = get_the_ID();
-
+	private function text_substitute( $html ) {
 		$html = preg_replace_callback(
 			'/{{cos.field_name.([\w\-_\ ]+)}}/',
 			function ( $matches ) {
@@ -60,7 +72,7 @@ class COD {
 
 		$all_meta = get_post_meta( get_the_ID() );
 
-		if ( isset( $_GET['displayallmeta'] ) ) {
+		if ( isset( $_GET['displayallmeta'] ) && get_option( 'cod_allow_display_all_meta' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			// Add the styles for the <pre> element
 			$html .= '<style>               
                 .allmeta { padding:20px; background-color:#f9f9f9;border:1px dotted #000000}
@@ -83,7 +95,7 @@ class COD {
 			$html .= '<div class="allmeta">';
 			$html .= '<h3>All object metadata</h3>';
 			$html .= '<pre>';
-			$html .= print_r( $all_meta, true );
+			$html .= print_r( $all_meta, true ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r -- Intended debug output.
 			$html .= '</pre>';
 			$html .= '</div>';
 		}
@@ -91,18 +103,7 @@ class COD {
 		return $html;
 	}
 
-	function print_filters_for( $hook = '' ) {
-		global $wp_filter;
-		if ( empty( $hook ) || ! isset( $wp_filter[ $hook ] ) ) {
-			return;
-		}
-
-		print '<pre>';
-		print_r( $wp_filter[ $hook ] );
-		print '</pre>';
-	}
-
-	function generate_settings_group_content( $group ) {
+	public function generate_settings_group_content( $group ) {
 		$group_id = $group['id'];
 		switch ( $group_id ) {
 			case 'cos_display_settings':
@@ -111,43 +112,47 @@ class COD {
 			default:
 				$message = '';
 		}
-		echo $message;
+		echo wp_kses_post( $message );
 	}
 
 
-	function register_settings() {
+	public function register_settings() {
 
 		add_settings_section( 'cos_display_settings', __( 'Main Settings', 'culture-object-display' ), array( $this, 'generate_settings_group_content' ), 'cos_display_settings' );
 
 		register_setting( 'cos_display_settings', 'cod_archive' );
 		register_setting( 'cos_display_settings', 'cod_single' );
+		register_setting( 'cos_display_settings', 'cod_allow_display_all_meta' );
 
 		add_settings_field( 'cod_archive', __( 'Archive and Search Results Content', 'culture-object-display' ), array( $this, 'generate_settings_wysiwyg' ), 'cos_display_settings', 'cos_display_settings', array( 'field' => 'cod_archive' ) );
 
 		add_settings_field( 'cod_single', __( 'Single Object Content', 'culture-object-display' ), array( $this, 'generate_settings_wysiwyg' ), 'cos_display_settings', 'cos_display_settings', array( 'field' => 'cod_single' ) );
+
+		add_settings_field( 'cod_allow_display_all_meta', __( 'Allow Display All Meta', 'culture-object-display' ), array( $this, 'generate_settings_checkbox' ), 'cos_display_settings', 'cos_display_settings', array( 'field' => 'cod_allow_display_all_meta' ) );
 	}
 
-	function generate_settings_wysiwyg( $args ) {
+	public function generate_settings_wysiwyg( $args ) {
 		wp_editor( get_option( $args['field'] ), $args['field'] );
 	}
 
+	public function generate_settings_checkbox( $args ) {
+		$field_name = $args['field'];
+		$value      = get_option( $field_name );
+		echo '<input type="checkbox" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '" value="1" ' . checked( 1, $value, false ) . ' />';
+		echo '<label for="' . esc_attr( $field_name ) . '">' . esc_html__( 'Enable display of all metadata when ?displayallmeta is added to URLs', 'culture-object-display' ) . '</label>';
+	}
 
-	function generate_display_page() {
+
+	public function generate_display_page() {
 		include $this->plugin_directory . '/views/display.php';
 	}
 
-	function add_admin_assets( $page ) {
-		/*
-		wp_register_style('cod_admin_css', $this->plugin_url . '/css/culture-object-display.css?nc='.time(), false, '1.0.0');
-		wp_enqueue_style('cod_admin_css');
-		wp_register_script('cod_admin_js', $this->plugin_url . '/js/culture-object-display.js?nc='.time(), array('jquery'), '1.0.0', true);
-		wp_enqueue_script('cod_admin_js');*/
-
+	public function add_admin_assets() {
 		add_action( 'media_buttons', array( $this, 'add_cod_button' ), 20 );
 		add_action( 'admin_print_footer_scripts', array( $this, 'add_mce_popup' ) );
 	}
 
-	function add_mce_popup() {
+	public function add_mce_popup() {
 		add_thickbox();
 		$cos = cos_get_instance();
 
@@ -184,7 +189,7 @@ class COD {
 
 			<select name="add_field" id="add_field">
 				<?php foreach ( $fields as $key => $field ) { ?>
-				<option value="<?php echo $key; ?>"><?php echo $field; ?></option>
+				<option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $field ); ?></option>
 				<?php } ?>
 			</select><br />
 			
@@ -196,16 +201,16 @@ class COD {
 		}
 	}
 
-	function add_cod_button() {
+	public function add_cod_button() {
 		echo '<a href="#TB_inline?width=600&height=300&inlineId=cod_media_link" class="button thickbox cod_media_link" id="add_cod" title="' . esc_attr__( 'Add Culture Object Field', 'culture-object-display' ) . '"><div>' . esc_html__( 'Add Culture Object Field', 'culture-object-display' ) . '</div></a>';
 	}
 
-	function add_menu_page() {
-		$display_page = add_submenu_page( 'cos_settings', __( 'Display Settings', 'culture-object-display' ), __( 'Display Settings', 'culture-object-display' ), 'administrator', 'cos_display_settings', array( $this, 'generate_display_page' ) );
+	public function add_menu_page() {
+		$display_page = add_submenu_page( 'cos_settings', __( 'Display Settings', 'culture-object-display' ), __( 'Display Settings', 'culture-object-display' ), 'administrator', 'cos_display_settings', array( $this, 'generate_display_page' ) ); // phpcs:ignore WordPress.WP.Capabilities.RoleFound
 		add_action( 'load-' . $display_page, array( $this, 'add_admin_assets' ) );
 	}
 
-	static function check_versions() {
+	public static function check_versions() {
 		global $wp_version;
 		$wp  = '4.5';
 		$php = '5.5';
@@ -229,8 +234,8 @@ class COD {
 		);
 
 		wp_die(
-			'<p>' . $error_string . '</p>',
-			$error_type,
+			'<p>' . wp_kses_post( $error_string ) . '</p>',
+			wp_kses_post( $error_type ),
 			array(
 				'response'  => 200,
 				'back_link' => true,
@@ -239,7 +244,7 @@ class COD {
 	}
 
 
-	static function regenerate_permalinks() {
+	public static function regenerate_permalinks() {
 		flush_rewrite_rules();
 	}
 }
