@@ -118,17 +118,6 @@ class COD {
 		return $html;
 	}
 
-	public function print_filters_for( $hook = '' ) {
-		global $wp_filter;
-		if ( empty( $hook ) || ! isset( $wp_filter[ $hook ] ) ) {
-			return;
-		}
-
-		print '<pre>';
-		print_r( $wp_filter[ $hook ] ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r -- Intended debug output.
-		print '</pre>';
-	}
-
 	public function generate_settings_group_content( $group ) {
 		$group_id = $group['id'];
 		switch ( $group_id ) {
