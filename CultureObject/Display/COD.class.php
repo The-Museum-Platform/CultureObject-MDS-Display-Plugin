@@ -61,7 +61,22 @@ class COD {
 		$html = preg_replace_callback(
 			'/{{cos.field_value.([\w\-_\ ]+)}}/',
 			function ( $matches ) {
-				return cos_get_field( $matches[1] );
+				$field = cos_get_field( $matches[1] );
+				if ( $field ) {
+					$heading = ucfirst( str_replace( '_', ' ', $matches[1] ) );
+					return '<h3><strong>' . esc_html( $heading ) . '</strong></h3><p>' . wp_kses_post( $field ) . '</p>';
+				}
+				return '';
+			},
+			$html
+		);
+
+		// Function to match 'all_fields' option
+		$html = preg_replace_callback(
+			'/{{cos.all_fields}}/',
+			function () {
+				// Function to return all fields as HTML table
+				return mds_cos_fields();
 			},
 			$html
 		);
@@ -74,21 +89,21 @@ class COD {
 
 		if ( isset( $_GET['displayallmeta'] ) && get_option( 'cod_allow_display_all_meta' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			// Add the styles for the <pre> element
-			$html .= '<style>               
+			$html .= '<style>
                 .allmeta { padding:20px; background-color:#f9f9f9;border:1px dotted #000000}
                 pre {
-                    background-color: #f4f4f4; 
-                    border: 1px solid #ddd;   
-                    padding: 10px;             
+                    background-color: #f4f4f4;
+                    border: 1px solid #ddd;
+                    padding: 10px;
                     font-family: "Courier New", Courier, monospace;
-                    font-size: 14px;           
-                    color: #333;               
-                    overflow-x: auto;          
-                    white-space: pre-wrap;     
-                    word-wrap: break-word;     
+                    font-size: 14px;
+                    color: #333;
+                    overflow-x: auto;
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
                     border-radius: 5px;
                 }
-                
+
             </style>';
 
 			// Add heading and metadata dump to the HTML
@@ -101,6 +116,17 @@ class COD {
 		}
 
 		return $html;
+	}
+
+	public function print_filters_for( $hook = '' ) {
+		global $wp_filter;
+		if ( empty( $hook ) || ! isset( $wp_filter[ $hook ] ) ) {
+			return;
+		}
+
+		print '<pre>';
+		print_r( $wp_filter[ $hook ] ); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r -- Intended debug output.
+		print '</pre>';
 	}
 
 	public function generate_settings_group_content( $group ) {
