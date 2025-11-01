@@ -3,7 +3,7 @@
  * Plugin Name: Culture Object MDS Display
  * Plugin URI: http://cultureobject.co.uk
  * Description: An extension to Culture Object to provide an archive view of objects and single object view for all themes.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Liam Gladdy / Thirty8 Digital / The Museum Platform / Jack Barber
  * Text Domain: culture-object-display
  * Author URI: https://github.com/lgladdy
@@ -128,23 +128,22 @@ function mds_cos_fields() {
 	$html  = '<h3 id="ct_complete_record"><a href="#">' . esc_html__( 'View complete record', 'culture-object-display' ) . '</a></h3>';
 	$html .= '<div id="ct_complete_record_table"><table>\n\n';
 
-	$csv_file = plugin_dir_path( __FILE__ ) . 'spectrum-display.csv';
-	if ( ! file_exists( $csv_file ) ) {
+	// Load field configuration from static PHP array for better performance.
+	$field_config_file = plugin_dir_path( __FILE__ ) . 'spectrum-display-fields.php';
+	if ( ! file_exists( $field_config_file ) ) {
 		return $html . '<tr><td>' . esc_html__( 'Configuration file not found.', 'culture-object-display' ) . '</td></tr></table></div>';
 	}
 
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-	$f = fopen( $csv_file, 'r' );
-	if ( ! $f ) {
-		return $html . '<tr><td>' . esc_html__( 'Unable to read configuration file.', 'culture-object-display' ) . '</td></tr></table></div>';
+	$field_config = require $field_config_file;
+	if ( ! is_array( $field_config ) ) {
+		return $html . '<tr><td>' . esc_html__( 'Unable to load configuration file.', 'culture-object-display' ) . '</td></tr></table></div>';
 	}
 
 	$i               = 0;
 	$display_section = false;
 	$section         = '';
 
-	$line = fgetcsv( $f );
-	while ( false !== $line ) {
+	foreach ( $field_config as $line ) {
 		if ( $i == 0 ) {
 			$html .= '<tr>';
 			foreach ( $line as $cell ) {
@@ -199,11 +198,7 @@ function mds_cos_fields() {
 			}
 		}
 		++$i;
-		$line = fgetcsv( $f );
 	}
-
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-	fclose( $f );
 
 	// Enqueue inline script for the complete record toggle functionality
 	wp_add_inline_script(
