@@ -30,13 +30,6 @@ function mds_make_links_clickable( $text ) {
 	);
 }
 
-function mds_enqueue_assets() {
-	// Enqueue minimal handles for our inline content
-	// Using false as src creates empty handles specifically for inline content
-	wp_enqueue_style( 'mds-record-display', false, array(), '1.0.0' );
-	wp_enqueue_script( 'mds-record-display', false, array(), '1.0.0', true );
-}
-
 function mds_cos_fields() {
 	$id = get_the_ID();
 	if ( ! $id ) {
@@ -52,50 +45,6 @@ function mds_cos_fields() {
 	}
 
 	$fields = array();
-
-	// Ensure assets are enqueued before adding inline styles/scripts
-	mds_enqueue_assets();
-
-	// Enqueue inline styles for the complete record table
-	wp_add_inline_style(
-		'mds-record-display',
-		'
-		#ct_complete_record_table {
-			display: none;
-			border-collapse: collapse;
-		}
-		#ct_complete_record_table.show {
-			display: block;
-		}
-		#ct_complete_record_table tr {
-			padding-bottom: 4px;
-		}
-		#ct_complete_record_table tr.hidden {
-			display: none;
-		}
-		#ct_complete_record_table tr th {
-			text-align: left;
-			font-size: 14px;
-			min-width: 100px;
-			background: #eee;
-		}
-		#ct_complete_record_table tr td {
-			vertical-align: top;
-			font-size: 12px;
-			border-bottom: 1px solid #ccc;
-		}
-		#ct_complete_record_table tr td.no-border {
-			border-bottom: none;
-		}
-		#ct_complete_record_table tr td .indent {
-			padding-left: 20px;
-			font-style: italic;
-		}
-		#ct_complete_record_table table tr:has(td:last-child:empty) {
-			display: none;
-		}
-	'
-	);
 
 	foreach ( $obj['units'] as $field ) {
 		if ( isset( $field['type'] ) && isset( $field['value'] ) ) {
@@ -125,8 +74,50 @@ function mds_cos_fields() {
 		}
 	}
 
-	$html  = '<h3 id="ct_complete_record"><a href="#">' . esc_html__( 'View complete record', 'culture-object-display' ) . '</a></h3>';
-	$html .= '<div id="ct_complete_record_table"><table>\n\n';
+	// Add inline CSS for the complete record table
+	$html  = '<style>
+		#ct_complete_record {
+			font-size: 14px;
+			font-weight: normal;
+		}
+		#ct_complete_record_table {
+			display: none;
+		}
+		#ct_complete_record_table.show {
+			display: block;
+		}
+		#ct_complete_record_table table {
+			border-collapse: collapse;
+			width: 100%;
+		}
+		#ct_complete_record_table tr {
+			padding-bottom: 4px;
+		}
+		#ct_complete_record_table tr.hidden {
+			display: none;
+		}
+		#ct_complete_record_table tr th {
+			text-align: left;
+			font-size: 14px;
+			min-width: 100px;
+			background: #eee;
+		}
+		#ct_complete_record_table tr td {
+			vertical-align: top;
+			font-size: 12px;
+			border-bottom: 1px solid #ccc;
+		}
+		#ct_complete_record_table tr td.no-border {
+			border-bottom: none;
+		}
+		#ct_complete_record_table tr td .indent {
+			padding-left: 20px;
+			font-style: italic;
+		}
+	</style>';
+
+	$html .= '<h3 id="ct_complete_record"><a href="#">' . esc_html__( 'View complete record', 'culture-object-display' ) . '</a></h3>';
+	$html .= '<div id="ct_complete_record_table"><table>';
 
 	// Load field configuration from static PHP array for better performance.
 	$field_config_file = plugin_dir_path( __FILE__ ) . 'spectrum-display-fields.php';
@@ -200,27 +191,6 @@ function mds_cos_fields() {
 		++$i;
 	}
 
-	// Enqueue inline script for the complete record toggle functionality
-	wp_add_inline_script(
-		'mds-record-display',
-		'
-		document.addEventListener("DOMContentLoaded", function() {
-			const button = document.querySelector("#ct_complete_record");
-			const elementToToggle = document.getElementById("ct_complete_record_table");
-			const link = button.querySelector("a");
-			button.addEventListener("click", function(e) {
-				e.preventDefault();
-				elementToToggle.classList.toggle("show");
-				if (elementToToggle.classList.contains("show")) {
-					link.textContent = "' . esc_js( __( 'Hide complete record', 'culture-object-display' ) ) . '";
-				} else {
-					link.textContent = "' . esc_js( __( 'View complete record', 'culture-object-display' ) ) . '";
-				}
-			});
-		});
-	'
-	);
-
 	// Add museum data service link if UID is available
 	$museum_link = '';
 	if ( $obj_admin && is_array( $obj_admin ) && isset( $obj_admin['uid'] ) && ! empty( $obj_admin['uid'] ) ) {
@@ -228,6 +198,26 @@ function mds_cos_fields() {
 	}
 
 	$html .= '</table>' . $museum_link . '</div>';
+
+	// Add inline script for the complete record toggle functionality
+	$html .= '<script>
+		document.addEventListener("DOMContentLoaded", function() {
+			const button = document.querySelector("#ct_complete_record");
+			const elementToToggle = document.getElementById("ct_complete_record_table");
+			const link = button.querySelector("a");
+			if (button && elementToToggle && link) {
+				button.addEventListener("click", function(e) {
+					e.preventDefault();
+					elementToToggle.classList.toggle("show");
+					if (elementToToggle.classList.contains("show")) {
+						link.textContent = "' . esc_js( __( 'Hide complete record', 'culture-object-display' ) ) . '";
+					} else {
+						link.textContent = "' . esc_js( __( 'View complete record', 'culture-object-display' ) ) . '";
+					}
+				});
+			}
+		});
+	</script>';
 
 	return $html;
 }
