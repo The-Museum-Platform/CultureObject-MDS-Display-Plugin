@@ -125,8 +125,8 @@ function mds_cos_fields() {
 		}
 	}
 
-	$html  = '<h3 id="ct_complete_record"><a href="#">' . esc_html__( 'View complete record', 'culture-object-display' ) . '</a></h3>';
-	$html .= '<div id="ct_complete_record_table"><table>';
+	$html  = '<h5 id="ct_complete_record"><a href="#">' . esc_html__( 'View complete record', 'culture-object-display' ) . '</a></h5>';
+	$html .= '<div id="ct_complete_record_table" style="display: none;"><table>';
 
 	// Load field configuration from static PHP array for better performance.
 	$field_config_file = plugin_dir_path( __FILE__ ) . 'spectrum-display-fields.php';
@@ -200,27 +200,6 @@ function mds_cos_fields() {
 		++$i;
 	}
 
-	// Enqueue inline script for the complete record toggle functionality
-	wp_add_inline_script(
-		'mds-record-display',
-		'
-		document.addEventListener("DOMContentLoaded", function() {
-			const button = document.querySelector("#ct_complete_record");
-			const elementToToggle = document.getElementById("ct_complete_record_table");
-			const link = button.querySelector("a");
-			button.addEventListener("click", function(e) {
-				e.preventDefault();
-				elementToToggle.classList.toggle("show");
-				if (elementToToggle.classList.contains("show")) {
-					link.textContent = "' . esc_js( __( 'Hide complete record', 'culture-object-display' ) ) . '";
-				} else {
-					link.textContent = "' . esc_js( __( 'View complete record', 'culture-object-display' ) ) . '";
-				}
-			});
-		});
-	'
-	);
-
 	// Add museum data service link if UID is available
 	$museum_link = '';
 	if ( $obj_admin && is_array( $obj_admin ) && isset( $obj_admin['uid'] ) && ! empty( $obj_admin['uid'] ) ) {
@@ -228,6 +207,20 @@ function mds_cos_fields() {
 	}
 
 	$html .= '</table>' . $museum_link . '</div>';
+
+	$html .= "<script>
+		document.querySelector('#ct_complete_record a').addEventListener('click', function(e) {
+			e.preventDefault();
+			var table = document.getElementById('ct_complete_record_table');
+			if (table.style.display === 'none' || table.style.display === '') {
+				table.style.display = 'block';
+				this.textContent = '" . esc_js( __( 'Hide complete record', 'culture-object-display' ) ) . "';
+			} else {
+				table.style.display = 'none';
+				this.textContent = '" . esc_js( __( 'View complete record', 'culture-object-display' ) ) . "';
+			}
+		});
+	</script>";
 
 	return $html;
 }
