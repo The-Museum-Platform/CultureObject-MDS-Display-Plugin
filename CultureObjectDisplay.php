@@ -126,7 +126,7 @@ function mds_cos_fields() {
 	}
 
 	$html  = '<h3 id="ct_complete_record"><a href="#">' . esc_html__( 'View complete record', 'culture-object-display' ) . '</a></h3>';
-	$html .= '<div id="ct_complete_record_table"><table>\n\n';
+	$html .= '<div id="ct_complete_record_table"><table>';
 
 	// Load field configuration from static PHP array for better performance.
 	$field_config_file = plugin_dir_path( __FILE__ ) . 'spectrum-display-fields.php';
