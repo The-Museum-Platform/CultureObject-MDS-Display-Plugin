@@ -3,7 +3,7 @@
  * Plugin Name: Culture Object MDS Display
  * Plugin URI: http://cultureobject.co.uk
  * Description: An extension to Culture Object to provide an archive view of objects and single object view for all themes.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: Liam Gladdy / Thirty8 Digital / The Museum Platform / Jack Barber
  * Text Domain: culture-object-display
  * Author URI: https://github.com/lgladdy
