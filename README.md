@@ -1,4 +1,4 @@
-CultureObject MDS Display v1.0.1
+CultureObject MDS Display v1.0.5
 ====================
 
 Welcome
@@ -7,6 +7,7 @@ An extension to Culture Object to provide an archive view of objects and single 
 
 Change Log
 ---------------------
+
 
 #### Version 1.0.1
 * **Code Quality & Standards**: Applied WordPress coding standards across all PHP files with proper visibility scoping and property declarations
