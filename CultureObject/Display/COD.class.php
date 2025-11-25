@@ -154,7 +154,8 @@ class COD {
 		$field_name = $args['field'];
 		$value      = get_option( $field_name );
 		echo '<input type="checkbox" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '" value="1" ' . checked( 1, $value, false ) . ' />';
-		echo '<label for="' . esc_attr( $field_name ) . '">' . esc_html__( 'Enable display of all metadata when ?displayallmeta is added to URLs', 'culture-object-display' ) . '</label>';
+		echo '<label for="' . esc_attr( $field_name ) . '">' . esc_html__( 'Enable display of all metadata when ?displayallmeta is added to URLs.', 'culture-object-display' ) . '</label>';
+		echo '<p><strong>Note:</strong> To display all Spectrum fields, you can also include {{cos.all_fields}} where needed.</p>';
 	}
 
 
