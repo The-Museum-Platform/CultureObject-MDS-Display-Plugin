@@ -3,7 +3,7 @@
  * Plugin Name: Culture Object MDS Display
  * Plugin URI: http://cultureobject.co.uk
  * Description: An extension to Culture Object to provide an archive view of objects and single object view for all themes.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: Liam Gladdy / Thirty8 Digital / The Museum Platform / Jack Barber
  * Text Domain: culture-object-display
  * Author URI: https://github.com/lgladdy
@@ -11,6 +11,20 @@
  * GitHub Branch: main
  * License: Apache 2 License
  */
+
+// Updater
+require 'lib/plugin-update-checker-5.6/plugin-update-checker.php';
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+$myUpdateChecker = PucFactory::buildUpdateChecker(
+ 'https://github.com/The-Museum-Platform/CultureObject-MDS-Display-Plugin/',
+ __FILE__,
+ 'CultureObjectDisplay'
+);
+
+$myUpdateChecker->setBranch('main'); 
+
+//----------
 
 require_once 'CultureObject/Display/COD.class.php';
 register_activation_hook( __FILE__, array( 'CultureObject\Display\COD', 'check_versions' ) );
